@@ -38,18 +38,18 @@ Ext.define('Ext.data.proxy.Pouch', {
   create:function (operation, callback, scope) {
     var records = operation.getRecords(),
       cb = function (err, info) {
-      operation.setCompleted();
-      if (!!err) {
-        operation.setException(err);
-      }
-      else {
-        operation.setSuccessful();
-      }
+        operation.setCompleted();
+        if (!!err) {
+          operation.setException(err);
+        }
+        else {
+          operation.setSuccessful();
+        }
 
-      if (typeof callback == 'function') {
-        callback.call(scope || this, operation);
-      }
-    };
+        if (typeof callback == 'function') {
+          callback.call(scope || this, operation);
+        }
+      };
 
     operation.setStarted();
 
@@ -57,42 +57,50 @@ Ext.define('Ext.data.proxy.Pouch', {
 
   },
   read:function (operation, callback, scope) {
-    var records    = [],
-      ids        = this.getIds(),
-      model      = this.getModel(),
-      idProperty = model.getIdProperty(),
-      params     = operation.getParams() || {},
-      length     = ids.length,
-      i, record;
-
-    //read a single record
-    if (params[idProperty] !== undefined) {
-
-      record = this.getRecord(params[idProperty]);
-      if (record) {
-        records.push(record);
+    var records = [],
+      params = operation.getParams() || {},
+      cb = function (err, data) {
         operation.setSuccessful();
-      }
+        if (!!err) {
+          operation.setException(err);
+        }
+        else {
+          operation.setCompleted();
+        }
+        operation.setResultSet(Ext.create('Ext.data.ResultSet', {
+          records:data,
+          total:data.length,
+          loaded:true
+        }));
+        operation.setRecords(data);
+
+        if (typeof callback == 'function') {
+          callback.call(scope || this, operation);
+        }
+      };
+    //read a single record
+    if (params['_id'] !== undefined) {
+      this.pouchCmd('get', function (err, doc) {
+        cb(err, [doc]);
+      }, params['_id']);
     } else {
-      for (i = 0; i < length; i++) {
-        records.push(this.getRecord(ids[i]));
-      }
-      operation.setSuccessful();
+      this.pouchCmd('allDocs', function (err, docs) {
+        var self = this;
+        if (!!err) {
+          cb(err, null);
+        }
+
+        async.map(docs.rows,
+          function (doc, cb) {
+            self.pouchCmd('get',  cb, doc.id);
+          },
+          function (err, result) {
+            cb(err, result);
+          });
+      });
+
+
     }
-
-    operation.setCompleted();
-
-    operation.setResultSet(Ext.create('Ext.data.ResultSet', {
-      records: records,
-      total  : records.length,
-      loaded : true
-    }));
-    operation.setRecords(records);
-
-    if (typeof callback == 'function') {
-      callback.call(scope || this, operation);
-    }
-
   },
   update:function (operation, callback, scope) {
     should.match(this.getDb(), /^(idb:\/\/|http:\/\/)/);
