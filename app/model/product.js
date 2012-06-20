@@ -1,4 +1,4 @@
-Ext.define('Product', {
+Ext.define('pie.model.Product', {
   extend: 'Ext.data.Model',
   config: {
     fields: [

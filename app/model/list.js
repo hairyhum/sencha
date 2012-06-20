@@ -1,4 +1,4 @@
-Ext.define('List', {
+Ext.define('pie.model.List', {
   extend: 'Ext.data.Model',
   config: {
     fields: [

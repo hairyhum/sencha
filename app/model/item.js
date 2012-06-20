@@ -1,9 +1,15 @@
-Ext.define('Item', {
+Ext.define('pie.model.Item',{
   extend: 'Ext.data.Model',
-  config: {
+  requires: [
+    'pie.data.proxy.TestProxy'
+  ],
+  config:{
     fields: [
       { name: 'amount', type: 'string' }
     ],
-    belongsTo: 'Product'
+    proxy: {
+      type: 'localstorage'
+    }
+    //belongsTo: 'Product'
   }
 });
